@@ -1,3 +1,3 @@
-In fisierul hunts avem 2 vanatori de comori GOTY001 SI GOTY002.
-In GOTY001 fisierul text Queen.txt NU are fisier log fiindca acesta a fost creat de functia add inainte de implementarea sistemului de 
-fisiere log, apoi dupa implementarea acestuia, nu a mai fost modificat.
+Treasure Hunt.
+In versiunea finala, treasure_manager prelucreaza fisiere binare
+Unica regula spune ca un user nu poate avea 2 comori in aceelasi cufar(ID)
