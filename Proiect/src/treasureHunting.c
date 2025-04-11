@@ -62,76 +62,49 @@ void add(char *huntID){
     strcat(path,"/");
     strcat(path,IDRead);
     //path[strlen(path)-1]='\0';
-    strcat(path,".txt");
+    strcat(path,".bin");
     int fd = open(path,O_RDWR|O_CREAT|O_APPEND,S_IRUSR|S_IWUSR);
     if(fd < 0 && errno != EEXIST){
         perror("Eroare!\n");
         return;
     }
     /*NU VOR FI PERMISE 2 COMORI DE LA ACELASI USER*/
-    char buffer[1024];
-    bytes = read(fd,buffer,1024);
-    if(bytes < 0){
-        perror("Citirea nu a reusit!\n");
-        return;
-    }
+    Treasure treasArray[CHUNK];
+    int arrayIndex = 0;
+    int arraySize = 0;
+    char newlineBuffer[2];
     
-    int totalLines = 0;
-    for(int i=0;i<strlen(buffer);i++){
-        if(buffer[i]=='\n'){
-            totalLines++;
-        }
+
+    while((bytes = read(fd,treasArray[arrayIndex].ID,sizeof(treasArray[arrayIndex].ID))) > 0){
+        read(fd,treasArray[arrayIndex].userName,sizeof(treasArray[arrayIndex].userName));
+        read(fd,&treasArray[arrayIndex].coordinates.latitude,sizeof(treasArray[arrayIndex].coordinates.latitude));
+        read(fd,&treasArray[arrayIndex].coordinates.longitude,sizeof(treasArray[arrayIndex].coordinates.longitude));
+        read(fd,treasArray[arrayIndex].clue,sizeof(treasArray[arrayIndex].clue));
+        read(fd,&treasArray[arrayIndex].value,sizeof(treasArray[arrayIndex].value));
+        read(fd,newlineBuffer,sizeof(newlineBuffer));
+        arrayIndex++;
+        
     }
-    char bufferLines[totalLines][1024];
-    char *buffToken = strtok(buffer,"\n");
-    if(!buffToken){
-        perror("Strtok failed! outside for\n");
-        return;
-    }
-    strcpy(bufferLines[0],buffToken);
-    for(int j=1;j<totalLines;j++){
-        if(j == totalLines - 1){
-            buffToken = strtok(NULL,"\n");
-            if(!buffToken){
-                perror("Strtok failed!\n");
-                return;
-            }
-            strcpy(bufferLines[j],buffToken);
-            continue;
-        }
-        buffToken = strtok(NULL,"\n");
-        if(!buffToken){
-                perror("Strtok failed!\n");
-                return;
-        }
-        strcpy(bufferLines[j],buffToken);
-    }
-    char placeHolder[1024]={'\0'};
-    char usernames[totalLines][USERNAME_LEN];
-    for(int i=0;i<totalLines;i++){
-        strcpy(placeHolder,bufferLines[i]);
-        strtok(placeHolder,",");
-        buffToken = strtok(NULL,",");
-        strcpy(usernames[i],buffToken);
-        continue;
-    }
+    arraySize = arrayIndex;
+    arrayIndex = 0;
+    
     
     //
     IDRead[bytes-1] = '\0';
-    char UserRead[USERNAME_LEN];
+    char UserRead[USERNAME_LEN] = {'\0'};
     char Coordinates[256];
     char Clue[CLUE_LEN];
     char Value[256];
 
     write(1,"Introduceti username -> ",25);
-    bytes = read(0,UserRead,USERNAME_LEN);
+    bytes = read(0,UserRead,sizeof(UserRead));
     if(bytes < 0){
         perror("Eroare citire!\n");
     }
     UserRead[bytes-1] = '\0';
 
-    for(int i=0;i<totalLines;i++){
-        if(strcmp(UserRead,usernames[i]) == 0){
+    for(arrayIndex=0;arrayIndex<arraySize;arrayIndex++){
+        if(strcmp(UserRead,treasArray[arrayIndex].userName) == 0){
             perror("User-ul are deja o comoara la ID-ul acesta\n");
             return;
         }
@@ -169,16 +142,17 @@ void add(char *huntID){
     tres.coordinates.latitude = coordinates.latitude ; tres.coordinates.longitude = coordinates.longitude;
     strcpy(tres.clue,Clue);
     //printf("%s|%s|%lf|%lf|%s|%d\n",tres.ID,tres.userName,tres.coordinates.latitude,tres.coordinates.longitude,tres.clue,tres.value);
-    write(fd,tres.ID,strlen(tres.ID));
-    write(fd,",",1);
-    write(fd,tres.userName,strlen(tres.userName));
-    write(fd,",",1);
-    write(fd,Coordinates,strlen(Coordinates));
-    write(fd,",",1);
-    write(fd,tres.clue,strlen(tres.clue));
-    write(fd,",",1);
-    write(fd,Value,strlen(Value));
-    write(fd,"\n",1);
+    write(fd,tres.ID,sizeof(tres.ID));
+    //write(fd,",",1);
+    write(fd,tres.userName,sizeof(tres.userName));
+    //write(fd,",",1);
+    write(fd,&tres.coordinates.latitude,sizeof(tres.coordinates.latitude));
+    write(fd,&tres.coordinates.longitude,sizeof(tres.coordinates.longitude));
+    //write(fd,",",1);
+    write(fd,tres.clue,sizeof(tres.clue));
+    //write(fd,",",1);
+    write(fd,&tres.value,sizeof(tres.value));
+    write(fd,"\n",2);
     if(close(fd)!= 0){
         perror("Eroare la inchidere!\n");
         return;
@@ -216,131 +190,60 @@ void add(char *huntID){
 void view(char *huntID, char *treasureID){
     struct stat fileInfo;
     char path[256] = {'\0'};
-     //path va contine calea spre fisierul cu hunt-uri
-    /*paramentrul huntID contine \n la final din cauza ca functia read() citeste
-    bytes si nu verifica daca am ajuns la newline. In fisierul treasure_manager se
-    va citi de la tastatura ID directorului care contine comoara dorita*/
+    
     huntID[strlen(huntID)-1] = '\0'; 
     sprintf(path,"../hunts/%s",huntID);
     printf("%s\n",path);
-    /*La treasureID se intampla acelasi lucru ca la huntID, paramentrul este
-    citit cu functia read()*/
-    //treasureID[strlen(treasureID)-1] = '\0';
-    /*presupunem ca huntID = Hunt1, dupa functia strcat, path va fi
-    sirul de caractere ../hunts/Hunt1*/
-    //strcat(path,huntID);
-    /*Vom utiliza lstat pentru a verifica daca directorul huntID exista
-    oferim path ca parametru fiindca path reprezinta calea spre huntID*/
-    if(strcmp("../hunts/GOTY001",path)==0){
-        printf("CPLM");
-    }
+    
+    
     if(lstat(path,&fileInfo) == -1){
         perror("Hunt-ul mentionat nu exista!\n");
         return;
     }
     
-    /*Daca huntID exista, schimbam calea catre treasureID*/
-    //strcat(path,"/");
-    //strcat(path,treasureID);
-    //path[strlen(path)-2] = '\0';
-    //strcat(path,".txt");
-    sprintf(path,"../hunts/%s/%s.txt",huntID,treasureID);
+  
+    sprintf(path,"../hunts/%s/%s.bin",huntID,treasureID);
     printf("%s\n",path);
-    /*verificam daca comoara treasureID exista sau nu*/
+    
     if(lstat(path,&fileInfo) == -1){
         perror("Comoara nu exista!\n");
         return;
     }
-    /*Daca comoara exista vom oferi informatiile care se afla inauntrul acesteia*/
+    
     int fd = open(path,O_RDONLY);
     if(fd < 0){
         perror("Nu s-a putut deschide comoara!\n");
         return;
     }
     write(1,"Succes opening file!\n",22);
-    /*Avem un buffer in care vom citi informatia din interioriul comorii
-    si alte buffere in care stocam informatii legate de coordonate si value*/
-    char buffer[1024] = {'\0'};
+    
     int bytes = 0;
     char coordinatesBuffer[256] = {'\0'};
     char valueBuffer[128] = {'\0'};
-    int i=0;
-    /*tres este folosit pentru a stoca informatia,avem un tablou in caz ca avem
-    mai multe comori inserate la acelasi ID*/
+    char newlineBuffer[2];
+   
     Treasure tres[CHUNK];
-    char *token = NULL;
-    bytes = read(fd,buffer,1024);
+    int i = 0;
+    int size = 0;
+    
     if(bytes == -1){
         perror("Eroare la citire din fisier!\n");
         return;
     }
-    /*Din moment ce functia read() citeste doar bytes si nu face distinctia
-    intre un caracter alfanumeric si newline vom face noi separatia*/
-    int totalLines = 0;
-    for(int j=0;j<strlen(buffer);j++){
-        if(buffer[j] == '\n'){
-            totalLines++;
-        }
+    while((bytes = read(fd,tres[i].ID,sizeof(tres[i].ID))) > 0){
+        read(fd,tres[i].userName,sizeof(tres[i].userName));
+        read(fd,&tres[i].coordinates.latitude,sizeof(tres[i].coordinates.latitude));
+        read(fd,&tres[i].coordinates.longitude,sizeof(tres[i].coordinates.longitude));
+        read(fd,tres[i].clue,sizeof(tres[i].clue));
+        read(fd,&tres[i].value,sizeof(tres[i].value));
+        read(fd,newlineBuffer,sizeof(newlineBuffer));
+        i++;
+        size = i;
     }
-    char bufferLines[totalLines][1024];
-    char *bufferToken = strtok(buffer,"\n");
-    strcpy(bufferLines[0],bufferToken);
-    for(int j=1;j<totalLines;j++){
-        if(j == totalLines-1){
-            bufferToken = strtok(NULL,"\n");
-            strcpy(bufferLines[j],bufferToken);
-            break;
-        }
-        bufferToken = strtok(NULL,"\n");
-        strcpy(bufferLines[j],bufferToken);
-    }
+    i=0;
 
-    for(i=0;i<totalLines;i++){
-    token = strtok(bufferLines[i],",");
-    if(!token){
-        perror("Strtok failed for ID!\n");
-        return;
-    }
-    strcpy(tres[i].ID,token);
-
-    token = strtok(NULL,",");
-    if(!token){
-        perror("Strtok failed for username!\n");
-        return;
-    }
-    strcpy(tres[i].userName,token);
-
-    token = strtok(NULL,",");
-    if(!token){
-        perror("Strtok failed for latitude!\n");
-        return;
-    }
-    tres[i].coordinates.latitude = atof(token);
-
-    token = strtok(NULL,",");
-    if(!token){
-        perror("Strtok failed for coordinates longitude!\n");
-        return;
-    }
-    tres[i].coordinates.longitude = atof(token);
-
-    token = strtok(NULL,",");
-    if(!token){
-        perror("Strtok failed for clue!\n");
-        return;
-    }
-    strcpy(tres[i].clue,token);
-
-    token = strtok(NULL,"\n");
-    if(!token){
-        perror("Strtok failed! for value\n");
-        return;
-    }
-    tres[i].value = atoi(token);
-
+    while(i<size){
     sprintf(coordinatesBuffer,"%lf,%lf",tres[i].coordinates.latitude,tres[i].coordinates.longitude);
-
-    
     sprintf(valueBuffer,"%d",tres[i].value);
 
     write(1,"\nID:",4);
@@ -358,6 +261,7 @@ void view(char *huntID, char *treasureID){
     write(1,"Value:",7);
     write(1,valueBuffer,strlen(valueBuffer));
     write(1,"\n------\n\n",8);
+    i++;
     }
     if(close(fd)!= 0){
         perror("O eroare la inchidere a avut loc!\n");
@@ -435,90 +339,62 @@ void remove_treasure(char *huntID,char *treasureID){
         perror("The respective hunt does not exist, no changes made\n");
         return;
     }
-    //treasureID[strlen(treasureID)-1] = '\0';
-    sprintf(path,"../hunts/%s/%s.txt",huntID,treasureID);
-    //printf("%s\n",path); //debugging
-    //strcat(path,"/");
-    //strcat(path,treasureID);
-    //path[strlen(path)-1] = '\0';
-    //strcat(path,".txt");
+    
+    sprintf(path,"../hunts/%s/%s.bin",huntID,treasureID);
     if(lstat(path,&fileInfo) == -1){
         perror("Treasure does not exist!\n");
         return;
     }
-    int fd = open(path,O_RDWR);
+    int fd = open(path,O_RDONLY);
     if(fd < 0){
         perror("Eroare la deschidere fisier!\n");
         return;
     }
-    char buffer[1024];
-    int bytes = read(fd,buffer,1024);
-    if(bytes < 0){
-        perror("Citirea nu a reusit!\n");
-        return;
+    /*char ID[ID_LEN] = {'\0'};
+    char username[USERNAME_LEN] ={'\0'};
+    GPSCoord coordinates;
+    char clue[CLUE_LEN] = {'\0'};
+    int value = 0;*/
+    Treasure treasure[CHUNK];
+    int i=0;
+    int size = 0;
+    char newlineBuffer[2] = {'\0'};
+    char choice[USERNAME_LEN] = {'\0'};
+
+    int bytes = 0;
+    while((bytes = read(fd,treasure[i].ID,sizeof(treasure[i].ID)) > 0)){
+        read(fd,treasure[i].userName,sizeof(treasure[i].userName));
+        read(fd,&treasure[i].coordinates.latitude,sizeof(treasure[i].coordinates.latitude));
+        read(fd,&treasure[i].coordinates.longitude,sizeof(treasure[i].coordinates.longitude));
+        read(fd,treasure[i].clue,sizeof(treasure[i].clue));
+        read(fd,&treasure[i].value,sizeof(treasure[i].value));
+        read(fd,newlineBuffer,sizeof(newlineBuffer));
+        i++;
     }
-    close(fd);
-    int totalLines = 0;
-    for(int i=0;i<strlen(buffer);i++){
-        if(buffer[i]=='\n'){
-            totalLines++;
-        }
-    }
-    char bufferLines[totalLines][1024];
-    char *buffToken = strtok(buffer,"\n");
-    if(!buffToken){
-        perror("Strtok failed! outside for\n");
-        return;
-    }
-    strcpy(bufferLines[0],buffToken);
-    for(int j=1;j<totalLines;j++){
-        if(j == totalLines - 1){
-            buffToken = strtok(NULL,"\n");
-            if(!buffToken){
-                perror("Strtok failed!\n");
-                return;
-            }
-            strcpy(bufferLines[j],buffToken);
-            continue;
-        }
-        buffToken = strtok(NULL,"\n");
-        if(!buffToken){
-                perror("Strtok failed!\n");
-                return;
-        }
-        strcpy(bufferLines[j],buffToken);
-    }
-    char placeHolder[1024]={'\0'};
-    char usernames[totalLines][USERNAME_LEN];
-    for(int i=0;i<totalLines;i++){
-        strcpy(placeHolder,bufferLines[i]);
-        strtok(placeHolder,",");
-        buffToken = strtok(NULL,",");
-        strcpy(usernames[i],buffToken);
-        continue;
-    }
+    size = i;
+    i = 0;
     write(1,"Username-uri prezente in comoara selectata:\n",44);
-    for(int i=0;i<totalLines;i++){
-        write(1,usernames[i],strlen(usernames[i]));
+    for(i=0;i<size;i++){
+        write(1,treasure[i].userName,strlen(treasure[i].userName));
         write(1,"\n",1);
     }
     write(1,"Introduceti username pe care doriti sa il stergeti -> ",54);
-    char choice[USERNAME_LEN] = {'\0'};
+    close(fd);
+
     read(0,choice,USERNAME_LEN);
     choice[strlen(choice)-1] = '\0';
-    printf("Choice:%s\n",choice);
     fd = open(path,O_TRUNC|O_WRONLY|O_APPEND);
-    for(int k=0;k<totalLines;k++){
-        if(strcmp(choice,usernames[k]) == 0){
+    for(i=0;i<size;i++){
+        if(strcmp(choice,treasure[i].userName) == 0){
             continue;
         }
-        if(k == totalLines-1){
-            write(fd,bufferLines[k],strlen(bufferLines[k]));
-            write(fd,"\n",1);
-            break;
-        }
-        write(fd,bufferLines[k],strlen(bufferLines[k]));
-        write(fd,"\n",1);
+        write(fd,treasure[i].ID,sizeof(treasure[i].ID));
+        write(fd,treasure[i].userName,sizeof(treasure[i].userName));
+        write(fd,&treasure[i].coordinates.latitude,sizeof(treasure[i].coordinates.latitude));
+        write(fd,&treasure[i].coordinates.longitude,sizeof(treasure[i].coordinates.longitude));
+        write(fd,treasure[i].clue,sizeof(treasure[i].clue));
+        write(fd,&treasure[i].value,sizeof(treasure[i].value));
+        write(fd,"\n",2);
     }
     lstat(path,&fileInfo);
     if(fileInfo.st_size == 0){
@@ -547,6 +423,7 @@ void remove_treasure(char *huntID,char *treasureID){
     write(logFD," la data ",9);
     write(logFD,fileModifyTime,strlen(fileModifyTime));
     close(logFD);
+   
 }
 
 void remove_hunt(char *huntID){
