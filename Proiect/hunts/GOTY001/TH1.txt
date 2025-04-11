@@ -2,4 +2,6 @@ TH1,Ab/G,0,4.27,Ooh Somebody,1976
 TH1,Bb,0,5.58,Is this the real life?,1975
 TH1,Eb,0,2.57,Old-Fashioned,1976
 TH1,Cbm/Bb,0,3.12,Dynamite with a laser beam,1974
-TH1,Bb,0,4.19,Hard,1984
+TH1,Borap,0,6,mama,75
+TH1,B,1,2,November,9
+TH1,F,0,3.33,I'm a shooting star,5
