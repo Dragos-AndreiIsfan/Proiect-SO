@@ -5,5 +5,3 @@ apoi face legatura intre treasure_manager.c si biblioteca
 treasureHunting.h
 Programul se bazeaza pe un meniu prin intermediul caruia
 utilizatorul poate testa functionalitatea acestuia.
-
-Munca Ramasa: De implementat fisierele log si legaturile simbolice
