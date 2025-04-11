@@ -1,0 +1,4 @@
+Queen,Freddie Mercury,1946,1991,Mamaaaaa,45
+Queen,Brian May,1946,0,Save Me,8
+Queen,John Deacon,1951,0,DeacyAmp,2
+Queen,Roger Taylor,1949,0,Ga Ga,1984
