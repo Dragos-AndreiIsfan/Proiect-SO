@@ -127,6 +127,34 @@ void add(char *huntID){
         perror("Eroare la inchidere!\n");
         return;
     }
+    lstat(path,&fileInfo);
+    char logPath[256]={'\0'};
+    char *fileModifyTime = ctime(&fileInfo.st_mtime);
+    sprintf(logPath,"../hunts/%s/%s-log.txt",huntID,tres.ID);
+    printf("%s\n",logPath);
+    int logFD = open(logPath,O_RDWR|O_CREAT|O_APPEND,S_IRUSR|S_IWUSR);
+    if(logFD < 0 && errno != EEXIST){
+        perror("Fisierul log nu a putut fi creat\n");
+        return;
+    }
+    write(logFD,"A fost adaugata o comoara a useru-ului ",39);
+    write(logFD,tres.userName,strlen(tres.userName));
+    write(logFD," in cufarul cu comori ",22);
+    write(logFD,tres.ID,strlen(tres.ID));
+    write(logFD," la data ",9);
+    write(logFD,fileModifyTime,strlen(fileModifyTime));
+    write(logFD,"\n",1);
+    close(logFD);
+    char linkPath[512];
+    char targetPath[512];
+    
+    sprintf(targetPath,"hunts/%s/%s-log.txt",huntID,tres.ID);
+    sprintf(linkPath,"../symlinklog-%s.txt",tres.ID);
+    
+    if(symlink(targetPath,linkPath) != 0 && errno != EEXIST){
+        perror("Eroare la creearea legaturii simbolice pentru log\n");
+        return;
+    }
 }
 
 void view(char *huntID, char *treasureID){
@@ -445,6 +473,22 @@ void remove_treasure(char *huntID,char *treasureID){
         }
     }
     close(fd);
+    char logPath[256] = {'\0'};
+    char *fileModifyTime = ctime(&fileInfo.st_mtime);
+    sprintf(logPath,"../hunts/%s/%s-log.txt",huntID,treasureID);
+    printf("%s\n",logPath);
+    int logFD = open(logPath,O_RDWR|O_APPEND,S_IRUSR,S_IWUSR);
+    if(logFD < 0){
+        perror("Eroare la deschidere log\n");
+        return;
+    }
+    write(logFD,"A fost stearsa comoara userului ",32);
+    write(logFD,choice,strlen(choice));
+    write(logFD," din cufarul cu ID-ul ",22);
+    write(logFD,treasureID,strlen(treasureID));
+    write(logFD," la data ",9);
+    write(logFD,fileModifyTime,strlen(fileModifyTime));
+    close(logFD);
 }
 
 void remove_hunt(char *huntID){
@@ -456,22 +500,40 @@ void remove_hunt(char *huntID){
         perror("The respective hunt does not exist, no changes made\n");
         return;
     }
+    char linkedPath[512] = {'\0'};
     DIR *director = opendir(path);
     if(!director){
         perror("Eroare la deschidere director!\n");
         return;
     }
+    int isLog = 0;
+    size_t dirNameLen = 0 ;
     struct dirent *dirr = NULL;
     char filePathInsideDirr[1024] = {'\0'};
     while((dirr = readdir(director)) != NULL){
         if(strcmp(dirr->d_name,".")!= 0 && strcmp(dirr->d_name,"..")!=0){
             sprintf(filePathInsideDirr,"%s/%s",path,dirr->d_name);
-            if(unlink(filePathInsideDirr)!= 0){
-            perror("Eroare la stergere fisier!\n");
-            closedir(director);
-            return;
+            dirNameLen = strlen(dirr->d_name);
+            if(dirr->d_name[dirNameLen-5]=='g' && dirr->d_name[dirNameLen-6] == 'o' && dirr->d_name[dirNameLen-7] == 'l' && dirr->d_name[dirNameLen-8] == '-'){
+                isLog = 1;
             }
+            if(isLog == 0){
+                sprintf(linkedPath,"../symlinklog-%s",dirr->d_name);
+                printf("%s\n",linkedPath);
+                if(unlink(linkedPath)!= 0){
+                    perror("Eroare la stergere legatura simbolica cu fisierul!\n");
+                    closedir(director);
+                    return;
+                }
+            }
+            if(unlink(filePathInsideDirr)!= 0){
+                perror("Eroare la stergere fisier!\n");
+                closedir(director);
+                return;
+            }
+            
         }
+        isLog = 0;
     }
     closedir(director);
 
@@ -480,5 +542,6 @@ void remove_hunt(char *huntID){
         return;
     }
     write(1,"Directory removed succesfully!\n",32);
+    
 
 }
