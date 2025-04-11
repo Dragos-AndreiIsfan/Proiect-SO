@@ -186,7 +186,7 @@ void add(char *huntID){
     lstat(path,&fileInfo);
     char logPath[256]={'\0'};
     char *fileModifyTime = ctime(&fileInfo.st_mtime);
-    sprintf(logPath,"../hunts/%s/%s-log.txt",huntID,tres.ID);
+    sprintf(logPath,"../hunts/%s/logged_hunt.txt",huntID);
     printf("%s\n",logPath);
     int logFD = open(logPath,O_RDWR|O_CREAT|O_APPEND,S_IRUSR|S_IWUSR);
     if(logFD < 0 && errno != EEXIST){
@@ -204,8 +204,8 @@ void add(char *huntID){
     char linkPath[512];
     char targetPath[512];
     
-    sprintf(targetPath,"hunts/%s/%s-log.txt",huntID,tres.ID);
-    sprintf(linkPath,"../symlinklog-%s.txt",tres.ID);
+    sprintf(targetPath,"hunts/%s/logged_hunt.txt",huntID);
+    sprintf(linkPath,"../symlinklog-%s.txt",huntID);
     
     if(symlink(targetPath,linkPath) != 0 && errno != EEXIST){
         perror("Eroare la creearea legaturii simbolice pentru log\n");
@@ -531,21 +531,10 @@ void remove_treasure(char *huntID,char *treasureID){
     close(fd);
     char logPath[256] = {'\0'};
     char *fileModifyTime = ctime(&fileInfo.st_mtime);
-    char linkLogPath[256] = {'\0'};
-    sprintf(logPath,"../hunts/%s/%s-log.txt",huntID,treasureID);
-    sprintf(linkLogPath,"../symlinklog-%s.txt",treasureID);
+    //char linkLogPath[256] = {'\0'};
+    sprintf(logPath,"../hunts/%s/logged_hunt.txt",huntID);
+    //sprintf(linkLogPath,"../symlinklog-%s.txt",treasureID);
     printf("%s\n",logPath);
-    if(fileInfo.st_size == 0){
-        if(unlink(logPath) == -1){
-            perror("Eroare la stergere log!\n");
-            return;
-        }
-        if(unlink(linkLogPath)==-1){
-            perror("Eroare la stergere legatura simbolica!\n");
-            return;
-        }
-        return;
-    }
     int logFD = open(logPath,O_RDWR|O_APPEND,S_IRUSR,S_IWUSR);
     if(logFD < 0){
         perror("Eroare la deschidere log\n");
@@ -562,9 +551,10 @@ void remove_treasure(char *huntID,char *treasureID){
 
 void remove_hunt(char *huntID){
     struct stat fileInfo;
-    char path[256] = "../hunts/";
-    strcat(path,huntID);
-    path[strlen(path)-1] = '\0';
+    char path[256] = {'\0'};
+    //strcat(path,huntID);
+    //path[strlen(path)-1] = '\0';
+    sprintf(path,"../hunts/%s",huntID);
     if(lstat(path,&fileInfo) == -1){
         perror("The respective hunt does not exist, no changes made\n");
         return;
@@ -575,26 +565,26 @@ void remove_hunt(char *huntID){
         perror("Eroare la deschidere director!\n");
         return;
     }
-    int isLog = 0;
-    size_t dirNameLen = 0 ;
+    //int isLog = 0;
+    //size_t dirNameLen = 0 ;
     struct dirent *dirr = NULL;
     char filePathInsideDirr[1024] = {'\0'};
     while((dirr = readdir(director)) != NULL){
         if(strcmp(dirr->d_name,".")!= 0 && strcmp(dirr->d_name,"..")!=0){
             sprintf(filePathInsideDirr,"%s/%s",path,dirr->d_name);
-            dirNameLen = strlen(dirr->d_name);
-            if(dirr->d_name[dirNameLen-5]=='g' && dirr->d_name[dirNameLen-6] == 'o' && dirr->d_name[dirNameLen-7] == 'l' && dirr->d_name[dirNameLen-8] == '-'){
+            //dirNameLen = strlen(dirr->d_name);
+            /*if(dirr->d_name[dirNameLen-5]=='g' && dirr->d_name[dirNameLen-6] == 'o' && dirr->d_name[dirNameLen-7] == 'l' && dirr->d_name[dirNameLen-8] == '-'){
                 isLog = 1;
             }
             if(isLog == 0){
-                sprintf(linkedPath,"../symlinklog-%s",dirr->d_name);
+                
                 printf("%s\n",linkedPath);
                 if(unlink(linkedPath)!= 0){
                     perror("Eroare la stergere legatura simbolica cu fisierul!\n");
                     closedir(director);
                     return;
                 }
-            }
+            }*/
             if(unlink(filePathInsideDirr)!= 0){
                 perror("Eroare la stergere fisier!\n");
                 closedir(director);
@@ -602,15 +592,19 @@ void remove_hunt(char *huntID){
             }
             
         }
-        isLog = 0;
+        //isLog = 0;
     }
     closedir(director);
-
+    sprintf(linkedPath,"../symlinklog-%s.txt",huntID);
+    printf("%s\n",linkedPath);
     if(rmdir(path)==-1){
         perror("File exists but has not been removed!\n");
         return;
     }
     write(1,"Directory removed succesfully!\n",32);
-    
+    if(unlink(linkedPath) == -1){
+        perror("Eroare la stergere legatura simbolica\n");
+        return;
+    }
 
 }
