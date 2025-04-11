@@ -531,8 +531,21 @@ void remove_treasure(char *huntID,char *treasureID){
     close(fd);
     char logPath[256] = {'\0'};
     char *fileModifyTime = ctime(&fileInfo.st_mtime);
+    char linkLogPath[256] = {'\0'};
     sprintf(logPath,"../hunts/%s/%s-log.txt",huntID,treasureID);
+    sprintf(linkLogPath,"../symlinklog-%s.txt",treasureID);
     printf("%s\n",logPath);
+    if(fileInfo.st_size == 0){
+        if(unlink(logPath) == -1){
+            perror("Eroare la stergere log!\n");
+            return;
+        }
+        if(unlink(linkLogPath)==-1){
+            perror("Eroare la stergere legatura simbolica!\n");
+            return;
+        }
+        return;
+    }
     int logFD = open(logPath,O_RDWR|O_APPEND,S_IRUSR,S_IWUSR);
     if(logFD < 0){
         perror("Eroare la deschidere log\n");
