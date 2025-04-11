@@ -47,6 +47,7 @@ void addMenu(){
         perror("Something went wrong when reading!\n");
         return;
     }
+    buff[bytes-1] = '\0';
     add(buff);
 }
 

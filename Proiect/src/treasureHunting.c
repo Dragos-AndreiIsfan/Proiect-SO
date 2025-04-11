@@ -33,10 +33,11 @@ struct _treasure{
 void add(char *huntID){
     struct stat fileInfo;
     char path[256]={'\0'};
-    strcpy(path,"../hunts/");
-    huntID[strlen(huntID)-1]='\0';
-    strcat(path,huntID); 
-    path[strlen(path)] = '\0';
+    //strcpy(path,"../hunts/");
+    //huntID[strlen(huntID)-1]='\0';
+    //strcat(path,huntID); 
+    //path[strlen(path)] = '\0';
+    sprintf(path,"../hunts/%s",huntID);
     if(lstat(path,&fileInfo) == -1){
         write(1,"Directorul nu exista,acesta va fi creat!\n",41);
         int dirCheck = mkdir(path,0777);
@@ -57,16 +58,65 @@ void add(char *huntID){
         perror("Eroare la citire!\n");
         return;
     }
-    IDRead[bytes] = '\0'; 
+    IDRead[bytes-1] = '\0'; 
     strcat(path,"/");
     strcat(path,IDRead);
-    path[strlen(path)-1]='\0';
+    //path[strlen(path)-1]='\0';
     strcat(path,".txt");
-    int fd = open(path,O_WRONLY|O_CREAT|O_APPEND,S_IRUSR|S_IWUSR);
+    int fd = open(path,O_RDWR|O_CREAT|O_APPEND,S_IRUSR|S_IWUSR);
     if(fd < 0 && errno != EEXIST){
         perror("Eroare!\n");
         return;
     }
+    /*NU VOR FI PERMISE 2 COMORI DE LA ACELASI USER*/
+    char buffer[1024];
+    bytes = read(fd,buffer,1024);
+    if(bytes < 0){
+        perror("Citirea nu a reusit!\n");
+        return;
+    }
+    
+    int totalLines = 0;
+    for(int i=0;i<strlen(buffer);i++){
+        if(buffer[i]=='\n'){
+            totalLines++;
+        }
+    }
+    char bufferLines[totalLines][1024];
+    char *buffToken = strtok(buffer,"\n");
+    if(!buffToken){
+        perror("Strtok failed! outside for\n");
+        return;
+    }
+    strcpy(bufferLines[0],buffToken);
+    for(int j=1;j<totalLines;j++){
+        if(j == totalLines - 1){
+            buffToken = strtok(NULL,"\n");
+            if(!buffToken){
+                perror("Strtok failed!\n");
+                return;
+            }
+            strcpy(bufferLines[j],buffToken);
+            continue;
+        }
+        buffToken = strtok(NULL,"\n");
+        if(!buffToken){
+                perror("Strtok failed!\n");
+                return;
+        }
+        strcpy(bufferLines[j],buffToken);
+    }
+    char placeHolder[1024]={'\0'};
+    char usernames[totalLines][USERNAME_LEN];
+    for(int i=0;i<totalLines;i++){
+        strcpy(placeHolder,bufferLines[i]);
+        strtok(placeHolder,",");
+        buffToken = strtok(NULL,",");
+        strcpy(usernames[i],buffToken);
+        continue;
+    }
+    
+    //
     IDRead[bytes-1] = '\0';
     char UserRead[USERNAME_LEN];
     char Coordinates[256];
@@ -80,6 +130,12 @@ void add(char *huntID){
     }
     UserRead[bytes-1] = '\0';
 
+    for(int i=0;i<totalLines;i++){
+        if(strcmp(UserRead,usernames[i]) == 0){
+            perror("User-ul are deja o comoara la ID-ul acesta\n");
+            return;
+        }
+    }
     write(1,"Introduceti coordonate(in forma x,y) -> ",41);
     bytes = read(0,Coordinates,256);
     if(bytes < 0){
@@ -143,7 +199,7 @@ void add(char *huntID){
     write(logFD,tres.ID,strlen(tres.ID));
     write(logFD," la data ",9);
     write(logFD,fileModifyTime,strlen(fileModifyTime));
-    write(logFD,"\n",1);
+    //write(logFD,"\n",1);
     close(logFD);
     char linkPath[512];
     char targetPath[512];
