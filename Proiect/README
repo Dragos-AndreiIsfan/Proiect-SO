@@ -1,3 +1,7 @@
 Treasure Hunt.
 In versiunea finala, treasure_manager prelucreaza fisiere binare
 Unica regula spune ca un user nu poate avea 2 comori in aceelasi cufar(ID)
+
+
+Acum contine implementarea pentru functiile din faza 2 start_monitor si stop_monitor
+Restul de functii vor veni in curand
