@@ -8,4 +8,5 @@ Au fost implementate functiile START MONITOR / STOP MONITOR / EXIT / VIEW TREASU
 Folderul phase1 trebuie sa contina folderul src, exact sub acel nume, iar folderul hunts este optional fiindca se creeaza la rularea treasure_manager-ului.
 Folderul phase2 trebuie sa contina folderul source, exact sub acel nume, fiindca implementarea functiilor este bazata pe denumirea src si source
 
-
+Dupa implementarea prelucrarii cu fisiere binare, functia view nu mai merge pe fisiere .txt ,datorita implementarii pe fisiere cu extensia .bin
+In rest, din testele facute la phase2, list treasures functioneaza si pentru fisirele .txt
