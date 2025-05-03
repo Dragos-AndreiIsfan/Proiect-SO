@@ -4,3 +4,5 @@ Pentru functionalitate buna, rulati compile.sh, de asemenea trebuie ca folderele
 
 Folderul phase1 trebuie sa contina folderul src, exact sub acel nume, iar folderul hunts este optional fiindca se creeaza la rularea treasure_manager-ului.
 Folderul phase2 trebuie sa contina folderul source, exact sub acel nume, fiindca implementarea functiilor este bazata pe denumirea src si source
+
+Fisierele command.txt, treasure.txt si huntID.txt sunt folosite pentru a comunica comenzile intre procesul parinte si procesul copil
