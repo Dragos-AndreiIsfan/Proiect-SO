@@ -2,6 +2,10 @@ Treasure Hunt.
 In versiunea finala, treasure_manager prelucreaza fisiere binare
 Unica regula spune ca un user nu poate avea 2 comori in aceelasi cufar(ID)
 
+Au fost implementate functiile START MONITOR / STOP MONITOR / EXIT / VIEW TREASURE / LIST TREASURES / LIST HUNTS
 
-Acum contine implementarea pentru functiile din faza 2 start_monitor si stop_monitor
-Restul de functii vor veni in curand
+
+Folderul phase1 trebuie sa contina folderul src, exact sub acel nume, iar folderul hunts este optional fiindca se creeaza la rularea treasure_manager-ului.
+Folderul phase2 trebuie sa contina folderul source, exact sub acel nume, fiindca implementarea functiilor este bazata pe denumirea src si source
+
+
