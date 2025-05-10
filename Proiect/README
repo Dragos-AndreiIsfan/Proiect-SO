@@ -10,3 +10,5 @@ Folderul phase2 trebuie sa contina folderul source, exact sub acel nume, fiindca
 
 Dupa implementarea prelucrarii cu fisiere binare, functia view nu mai merge pe fisiere .txt ,datorita implementarii pe fisiere cu extensia .bin
 In rest, din testele facute la phase2, list treasures functioneaza si pentru fisirele .txt
+
+A fost creata si testata functia calculate_score.c pentru phase3 pe fisierele binare din vanatoare BIN1.
