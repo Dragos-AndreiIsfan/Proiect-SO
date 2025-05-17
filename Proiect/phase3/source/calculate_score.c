@@ -6,47 +6,22 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include "calculate_score.h"
+#include <sys/wait.h>
 
 
-#define ID_LEN 100
-#define USERNAME_LEN 120
-#define CLUE_LEN 256
-#define CHUNK 64
-#define SET_CHUNK 32
 
-struct _GPScoordinates{
-    double longitude;
-    double latitude;
-};
+
 
 //ideea mea este de a implementa o structura de tip multime, in care elementele au un nume, user, si o valoare integer
-
-
-typedef struct setElement{
-    char username[USERNAME_LEN];
-    int value;
-}element;
-
-typedef struct __set__{
-    element *multime;
-    int currentSize;
-    int maxSize;
-}set;
-
-
 
 
 // vom creea operatile necesare multimii
 
 set createSet(){
     set new;
-    new.multime = (element*)malloc(sizeof(element)*SET_CHUNK);
-    if(new.multime == NULL){
-        perror("Multimea nu a fost alocata!\n");
-        return new;
-    }
+    
     new.currentSize = 0;
-    new.maxSize = SET_CHUNK;
+    new.maxSize = MAX_ELEMENTS;
     return new;
 }
 
@@ -66,14 +41,7 @@ set addToSet(set *sets , element el){
         return *sets;
     }
     if(sets->currentSize == sets->maxSize){
-        sets->maxSize += SET_CHUNK;
-        set tmp;
-        tmp.multime = (element*)realloc(sets->multime,sizeof(element)*sets->maxSize);
-        if(tmp.multime == NULL){
-            perror("Eroare la realocare!\nNicio schimbare facuta!\n");
-            return *sets;
-        }
-        sets->multime = tmp.multime;
+        return *sets;
     }
     sets->multime[sets->currentSize++] = el;
     return *sets;
@@ -92,14 +60,10 @@ void printScores(set *sets){
     }
 }
 
-void freeSet(set *sets){
-    
-    free(sets->multime);
 
-}
 
 set readFile(char *path,set *M){
-    char ID[ID_LEN] = {'\0'};
+    char ID[ID_LEN];
     struct _GPScoordinates cords;
     char clue[CLUE_LEN];
     char newlineBuffer[2];
@@ -126,31 +90,55 @@ set readFile(char *path,set *M){
     return *M;
 }
 
-void calculate_score(char *huntFolder,char *huntID){
-    char path[512];
-    sprintf(path,"%s/%s",huntFolder,huntID);
-    //chdir(path);
-    set S = createSet();
-    if(S.multime == NULL){
-        perror("!!EROARE LA CREEARE MULTIME!!\n");
-        return;
-    }
+set calculate_score(char *huntFolder,set *M){
+    char path[256];
+    char huntPath[512];
+    char filePath[1024];
+    pid_t child = -1;
+    int pfd[2];
+    sprintf(path,"%s",huntFolder);
+    //chdir(huntFolder);
     DIR *direct = opendir(path);
     struct dirent *dirEntry = NULL;
     while((dirEntry = readdir(direct)) != NULL){
-        if(strcmp(dirEntry->d_name,".") == 0 ||strcmp(dirEntry->d_name,"..") == 0 || strcmp(dirEntry->d_name,"logged_hunt.txt") == 0){
+        if(strcmp(dirEntry->d_name,".") == 0 ||strcmp(dirEntry->d_name,"..") == 0){
             continue;
         }
-        sprintf(path,"%s/%s/%s",huntFolder,huntID,dirEntry->d_name);
-        S = readFile(path,&S);
-        if(S.multime == NULL){
-            perror("Eroare la fisier!\n");
-            closedir(direct);
-            return;
+        sprintf(huntPath,"%s/%s",path,dirEntry->d_name);
+        if(pipe(pfd) < 0){
+                perror("Pipe error!\n");
+                exit(EXIT_FAILURE);
+            }
+        if((child = fork())<0){
+            perror("Eroare la fork!\n");
+            exit(EXIT_FAILURE);
         }
+        else if(child == 0){
+            close(pfd[0]);
+            set S = createSet();
+            DIR *newDir = opendir(huntPath);
+            struct dirent *dirr = NULL;
+            while((dirr=readdir(newDir))!= NULL){
+                if(strcmp(dirr->d_name,".") == 0 || strcmp(dirr->d_name,"..") == 0 || strcmp(dirr->d_name,"logged_hunt.txt") == 0){
+                    continue;
+                }   
+                sprintf(filePath,"%s/%s",huntPath,dirr->d_name);
+                S = readFile(filePath,M);
+            }
+            closedir(newDir);
+            write(pfd[1],&S,sizeof(S));
+            close(pfd[1]);
+            exit(0);
+        }
+        waitpid(child,NULL,0);
+        read(pfd[0],M,sizeof(*M));
+        close(pfd[0]);
     }
     closedir(direct);
-    printScores(&S);
-    freeSet(&S);
-
+    
+    return *M;  
 }
+    
+    
+    
+
