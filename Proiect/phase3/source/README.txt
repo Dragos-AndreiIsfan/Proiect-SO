@@ -1,4 +1,4 @@
-Created the calculate_score method for phase3
+The project is finished, every task has been completed!
 
 Also included the files used to test the function, for the calculate score function works by using a set data structure, since the hunts have only 1 user per treasure, the same user can have multiple treasures at different treasure IDs, and using the set we can calculate the score of a user.
 Also, the set has been tested AND the calculate score method on the binary files BIN01 and BIN02 from hunt BIN1, also added the same user, named user1 to BIN1 with value 100, and after calling the calculate score function, user1 has 101 score, for he has value 100 in treasure BIN01 and value 1, in treasure BIN02.
